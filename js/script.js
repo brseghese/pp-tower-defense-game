@@ -13,6 +13,7 @@ let gameOver = false;
 let score = 0;
 const winningScore = 50;
 let chosenDefender = 1;
+let next = false;
 
 const gameGrid = [];
 const defenders = [];
@@ -523,21 +524,73 @@ canvas.addEventListener("click", function () {
       return;
   }
   let defenderCost = 100;
-  if (numberOfResources >= defenderCost) {
+  if (numberOfResources >= defenderCost && next === false) {
     defenders.push(new Defender(gridPositionX, gridPositionY));
     numberOfResources -= defenderCost;
-  } else {
+  } else if (next === false) {
     floatingMessages.push(
       new FloatingMessage("Need More Resources", mouse.x, mouse.y, 20, "gold")
     );
   }
+  next = false;
 });
 
+// background
 const back = new Image();
 back.src = "./assets/background.png";
 function background() {
   ctx.drawImage(back, 0, 100, 900, 500);
 }
+
+// start game
+const box = {
+  x: 300,
+  y: 200,
+  width: 300,
+  height: 200,
+};
+
+const button = {
+  x: 340,
+  y: 260,
+  width: 220,
+  height: 80,
+};
+
+function boxButton() {
+  ctx.lineWidth = 1;
+  ctx.fillStyle = "rgba(40, 40, 40, 1)";
+  ctx.fillRect(box.x, box.y, box.width, box.height);
+  ctx.strokeStyle = "black";
+  ctx.strokeRect(box.x, box.y, box.width, box.height);
+
+  ctx.fillStyle = "black";
+  ctx.fillRect(button.x, button.y, button.width, button.height);
+  ctx.strokeStyle = "black";
+  ctx.strokeRect(button.x, button.y, button.width, button.height);
+
+  ctx.fillStyle = "gold";
+  ctx.font = "30px Orbitron";
+  ctx.fillText("Start Game", 355, 310);
+
+  if (collision(mouse, button) && mouse.clicked) {
+    next = true;
+    animate();
+  }
+}
+
+function startAnimate() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "rgba(40, 40, 40, 1)";
+  ctx.fillRect(0, 0, controlsBar.width, controlsBar.height);
+  background();
+  boxButton();
+  handleGameStatus();
+  frame++;
+  if (!next) requestAnimationFrame(startAnimate);
+}
+
+startAnimate();
 
 function animate() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -556,7 +609,7 @@ function animate() {
   if (!gameOver) requestAnimationFrame(animate);
 }
 
-animate();
+// animate();
 
 function collision(first, second) {
   if (
