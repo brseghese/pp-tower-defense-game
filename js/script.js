@@ -13,7 +13,7 @@ let gameOver = false;
 let score = 0;
 const winningScore = 50;
 let chosenDefender = 1;
-let next = false;
+let nextAnimate = false;
 
 const gameGrid = [];
 const defenders = [];
@@ -509,7 +509,7 @@ function handleGameStatus() {
   if (score >= winningScore && enemies.length === 0) {
     ctx.fillStyle = "gold";
     ctx.font = "60px Orbitron";
-    ctx.fillText("LEVEL COMPLETE", 130, 300);
+    ctx.fillText("LEVEL COMPLETE", 130, 250);
     ctx.font = "30px Orbitron";
     ctx.fillText("You win with " + score + " points!", 134, 340);
   }
@@ -524,15 +524,15 @@ canvas.addEventListener("click", function () {
       return;
   }
   let defenderCost = 100;
-  if (numberOfResources >= defenderCost && next === false) {
+  if (numberOfResources >= defenderCost && nextAnimate === false) {
     defenders.push(new Defender(gridPositionX, gridPositionY));
     numberOfResources -= defenderCost;
-  } else if (next === false) {
+  } else if (nextAnimate === false) {
     floatingMessages.push(
       new FloatingMessage("Need More Resources", mouse.x, mouse.y, 20, "gold")
     );
   }
-  next = false;
+  nextAnimate = false;
 });
 
 // background
@@ -574,7 +574,7 @@ function boxButton() {
   ctx.fillText("Start Game", 355, 310);
 
   if (collision(mouse, button) && mouse.clicked) {
-    next = true;
+    nextAnimate = true;
     animate();
   }
 }
@@ -586,8 +586,8 @@ function startAnimate() {
   background();
   boxButton();
   handleGameStatus();
-  frame++;
-  if (!next) requestAnimationFrame(startAnimate);
+  // frame++;
+  if (!nextAnimate) requestAnimationFrame(startAnimate);
 }
 
 startAnimate();
