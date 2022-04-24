@@ -13,7 +13,7 @@ let gameOver = false;
 let score = 0;
 const winningScore = 50;
 let chosenDefender = 1;
-let nextAnimate = false;
+let startNext = false;
 
 const gameGrid = [];
 const defenders = [];
@@ -48,6 +48,10 @@ canvas.addEventListener("mousemove", function (e) {
 canvas.addEventListener("mouseleave", function () {
   mouse.x = undefined;
   mouse.y = undefined;
+});
+
+window.addEventListener("resize", function () {
+  canvasPosition = canvas.getBoundingClientRect();
 });
 
 // game board
@@ -511,7 +515,7 @@ function handleGameStatus() {
     ctx.font = "60px Orbitron";
     ctx.fillText("LEVEL COMPLETE", 130, 250);
     ctx.font = "30px Orbitron";
-    ctx.fillText("You win with " + score + " points!", 134, 340);
+    ctx.fillText("You win with " + score + " points!", 134, 300);
   }
 }
 
@@ -524,15 +528,15 @@ canvas.addEventListener("click", function () {
       return;
   }
   let defenderCost = 100;
-  if (numberOfResources >= defenderCost && nextAnimate === false) {
+  if (numberOfResources >= defenderCost && startNext === false) {
     defenders.push(new Defender(gridPositionX, gridPositionY));
     numberOfResources -= defenderCost;
-  } else if (nextAnimate === false) {
+  } else if (startNext === false) {
     floatingMessages.push(
       new FloatingMessage("Need More Resources", mouse.x, mouse.y, 20, "gold")
     );
   }
-  nextAnimate = false;
+  startNext = false;
 });
 
 // background
@@ -542,56 +546,7 @@ function background() {
   ctx.drawImage(back, 0, 100, 900, 500);
 }
 
-// start game
-const box = {
-  x: 300,
-  y: 200,
-  width: 300,
-  height: 200,
-};
-
-const button = {
-  x: 340,
-  y: 260,
-  width: 220,
-  height: 80,
-};
-
-function boxButton() {
-  ctx.lineWidth = 1;
-  ctx.fillStyle = "rgba(40, 40, 40, 1)";
-  ctx.fillRect(box.x, box.y, box.width, box.height);
-  ctx.strokeStyle = "black";
-  ctx.strokeRect(box.x, box.y, box.width, box.height);
-
-  ctx.fillStyle = "black";
-  ctx.fillRect(button.x, button.y, button.width, button.height);
-  ctx.strokeStyle = "black";
-  ctx.strokeRect(button.x, button.y, button.width, button.height);
-
-  ctx.fillStyle = "gold";
-  ctx.font = "30px Orbitron";
-  ctx.fillText("Start Game", 355, 310);
-
-  if (collision(mouse, button) && mouse.clicked) {
-    nextAnimate = true;
-    animate();
-  }
-}
-
-function startAnimate() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = "rgba(40, 40, 40, 1)";
-  ctx.fillRect(0, 0, controlsBar.width, controlsBar.height);
-  background();
-  boxButton();
-  handleGameStatus();
-  // frame++;
-  if (!nextAnimate) requestAnimationFrame(startAnimate);
-}
-
-startAnimate();
-
+// game loop
 function animate() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = "rgba(40, 40, 40, 1)";
@@ -609,7 +564,54 @@ function animate() {
   if (!gameOver) requestAnimationFrame(animate);
 }
 
-// animate();
+// start game
+const box = {
+  x: 300,
+  y: 200,
+  width: 300,
+  height: 200,
+};
+
+const button = {
+  x: 340,
+  y: 260,
+  width: 220,
+  height: 80,
+};
+
+function startButton() {
+  ctx.lineWidth = 1;
+  ctx.fillStyle = "rgba(40, 40, 40, 1)";
+  ctx.fillRect(box.x, box.y, box.width, box.height);
+  ctx.strokeStyle = "black";
+  ctx.strokeRect(box.x, box.y, box.width, box.height);
+
+  ctx.fillStyle = "black";
+  ctx.fillRect(button.x, button.y, button.width, button.height);
+  ctx.strokeStyle = "black";
+  ctx.strokeRect(button.x, button.y, button.width, button.height);
+
+  ctx.fillStyle = "gold";
+  ctx.font = "30px Orbitron";
+  ctx.fillText("Start Game", 355, 310);
+
+  if (collision(mouse, button) && mouse.clicked) {
+    startNext = true;
+    animate();
+  }
+}
+
+function startAnimate() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "rgba(40, 40, 40, 1)";
+  ctx.fillRect(0, 0, controlsBar.width, controlsBar.height);
+  background();
+  startButton();
+  handleGameStatus();
+  if (!startNext) requestAnimationFrame(startAnimate);
+}
+
+startAnimate();
 
 function collision(first, second) {
   if (
@@ -622,7 +624,3 @@ function collision(first, second) {
   )
     return true;
 }
-
-window.addEventListener("resize", function () {
-  canvasPosition = canvas.getBoundingClientRect();
-});
