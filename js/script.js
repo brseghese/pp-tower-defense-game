@@ -8,12 +8,16 @@ const cellSize = 100;
 const cellGap = 3;
 let numberOfResources = 300;
 let enemiesInterval = 600;
+let enemiesHard = 50;
 let frame = 0;
 let gameOver = false;
 let score = 0;
-const winningScore = 50;
+let winningScore = 50;
 let chosenDefender = 1;
 let startNext = false;
+let levelNext = false;
+let startTime = 1;
+let endTime = 3000;
 
 const gameGrid = [];
 const defenders = [];
@@ -21,6 +25,18 @@ const enemies = [];
 const enemyPositions = [];
 const projectiles = [];
 const resources = [];
+
+const shot = new Audio("./assets/laser.mp3");
+const music = new Audio("./assets/music.mp3");
+
+music.addEventListener(
+  "ended",
+  function () {
+    music.currentTime = 0;
+    music.play();
+  },
+  false
+);
 
 // mouse
 const mouse = {
@@ -154,7 +170,6 @@ class Defender {
     this.shooting = false;
     this.shootingNow = false;
     this.health = 100;
-    // this.projectiles = [];
     this.timer = 0;
     this.frameX = 0;
     this.frameY = 0;
@@ -212,6 +227,7 @@ class Defender {
     }
     if (this.shooting && this.shootingNow) {
       projectiles.push(new Projectile(this.x + 100, this.y + 25));
+      shot.play();
       this.shootingNow = false;
     }
   }
@@ -326,6 +342,91 @@ function handleFloatingMessages() {
   }
 }
 
+// modal next level
+const modalLevels = [];
+
+class ModalNextLevel {
+  constructor(
+    modalX,
+    modalY,
+    modalWidth,
+    modalHeight,
+    buttonX,
+    buttonY,
+    buttonWidth,
+    buttonHeight
+  ) {
+    this.modal = {
+      x: modalX,
+      y: modalY,
+      width: modalWidth,
+      height: modalHeight,
+    };
+    this.button = {
+      x: buttonX,
+      y: buttonY,
+      width: buttonWidth,
+      height: buttonHeight,
+    };
+  }
+  draw() {
+    ctx.lineWidth = 1;
+    ctx.fillStyle = "rgba(40, 40, 40, 1)";
+    ctx.fillRect(
+      this.modal.x,
+      this.modal.y,
+      this.modal.width,
+      this.modal.height
+    );
+    ctx.strokeStyle = "black";
+    ctx.strokeRect(
+      this.modal.x,
+      this.modal.y,
+      this.modal.width,
+      this.modal.height
+    );
+    ctx.fillStyle = "black";
+    ctx.fillRect(
+      this.button.x,
+      this.button.y,
+      this.button.width,
+      this.button.height
+    );
+    ctx.strokeStyle = "black";
+    ctx.strokeRect(
+      this.button.x,
+      this.button.y,
+      this.button.width,
+      this.button.height
+    );
+
+    ctx.fillStyle = "gold";
+    ctx.font = "30px Orbitron";
+    ctx.fillText("Next Level", 355, 310);
+  }
+}
+
+function handleModalNextLevel() {
+  if (startTime >= endTime && enemies.length === 0) {
+    levelNext = true;
+    modalLevels[0].draw();
+
+    if (collision(mouse, modalLevels[0].button) && mouse.clicked) {
+      modalLevels.splice(0, 1);
+      startTime = 1;
+      winningScore += score;
+      enemiesInterval = 600;
+      enemiesHard += 10;
+      numberOfResources += 300;
+
+      for (let i = 0; i < defenders.length; i++) {
+        defenders.splice(i, 1);
+        i--;
+      }
+    }
+  }
+}
+
 // enemies
 const enemyTypes = [];
 const enemy1 = new Image();
@@ -419,7 +520,7 @@ function handleEnemies() {
       Math.floor(Math.random() * 5 + 1) * cellSize + cellGap;
     enemies.push(new Enemy(verticalPosition));
     enemyPositions.push(verticalPosition);
-    if (enemiesInterval > 120) enemiesInterval -= 50;
+    if (enemiesInterval > 120) enemiesInterval -= enemiesHard;
   }
 }
 
@@ -435,7 +536,6 @@ class Resources {
     this.width = cellSize;
     this.height = cellSize;
     this.amount = amounts[Math.floor(Math.random() * amounts.length)];
-
     this.timer = 0;
     this.frameX = 0;
     this.frameY = 0;
@@ -511,11 +611,12 @@ function handleGameStatus() {
     ctx.fillText("Game Over", 175, 250);
   }
   if (score >= winningScore && enemies.length === 0) {
-    ctx.fillStyle = "gold";
-    ctx.font = "60px Orbitron";
-    ctx.fillText("LEVEL COMPLETE", 130, 250);
-    ctx.font = "30px Orbitron";
-    ctx.fillText("You win with " + score + " points!", 134, 300);
+    // ctx.fillStyle = "gold";
+    // ctx.font = "60px Orbitron";
+    // ctx.fillText("LEVEL COMPLETE", 130, 250);
+    // ctx.font = "30px Orbitron";
+    // ctx.fillText("You win with " + score + " points!", 134, 300);
+    modalLevels.push(new ModalNextLevel(300, 200, 300, 200, 340, 260, 220, 80));
   }
 }
 
@@ -528,15 +629,20 @@ canvas.addEventListener("click", function () {
       return;
   }
   let defenderCost = 100;
-  if (numberOfResources >= defenderCost && startNext === false) {
+  if (
+    numberOfResources >= defenderCost &&
+    startNext === false &&
+    levelNext === false
+  ) {
     defenders.push(new Defender(gridPositionX, gridPositionY));
     numberOfResources -= defenderCost;
-  } else if (startNext === false) {
+  } else if (startNext === false && levelNext === false) {
     floatingMessages.push(
       new FloatingMessage("Need More Resources", mouse.x, mouse.y, 20, "gold")
     );
   }
   startNext = false;
+  levelNext = false;
 });
 
 // background
@@ -560,7 +666,9 @@ function animate() {
   chooseDefender();
   handleGameStatus();
   handleFloatingMessages();
+  handleModalNextLevel();
   frame++;
+  startTime++;
   if (!gameOver) requestAnimationFrame(animate);
 }
 
@@ -597,6 +705,7 @@ function startButton() {
 
   if (collision(mouse, button) && mouse.clicked) {
     startNext = true;
+    music.play();
     animate();
   }
 }
